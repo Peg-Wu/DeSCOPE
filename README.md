@@ -135,9 +135,9 @@ We sincerely thank the authors of following open-source projects:
 ## Star History
 
 <p align="center">
-  <a href="https://star-history.com/#Peg-Wu/DeSCOPE&Date">
+  <a href="https://www.star-history.com/?repos=Peg-Wu%2FDeSCOPE&type=date&legend=top-left">
     <img 
-      src="https://api.star-history.com/svg?repos=Peg-Wu/DeSCOPE&type=Date"
+      src="https://api.star-history.com/image?repos=Peg-Wu/DeSCOPE&type=date&legend=top-left"
       width="600"
       alt="Star History Chart"
     />
