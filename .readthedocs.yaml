@@ -12,6 +12,8 @@ build:
 # Python requirements required build your documentation
 python:
   install:
+    - method: pip
+      path: .
     - requirements: docs/requirements.txt
 
 # Build documentation in the "docs/" directory with Sphinx
