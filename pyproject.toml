@@ -1,0 +1,35 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/descope"]
+
+[project]
+name = "descopex"
+version = "0.0.1"
+authors = [
+  { name="Pengpeng Wu", email="peg2_wu@163.com" },
+  { name="Hailin Wei", email="hailinwei98@gmail.com" },
+  { name="Yazi Li", email="liyazi23811@gmail.com" }
+]
+description = "Decoding Single-Cell Observations of Perturbed Expression."
+readme = "README.md"
+keywords = ["descope", "descopex"]
+requires-python = ">=3.10"
+dependencies = [
+    "torch",  # PyTorch: Installation details in README.md
+    # "deepspeed",  # (Optional): Installation details in README.md
+    "wppkg==0.1.2",
+    "cell-eval"  # In our experiment, we used version 0.6.6
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent"
+]
+license = "MIT"
+license-files = ["LICENSE"]
+
+[project.urls]
+Homepage = "https://github.com/Peg-Wu/DeSCOPE"
+Issues = "https://github.com/Peg-Wu/DeSCOPE/issues"
