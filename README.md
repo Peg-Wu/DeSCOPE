@@ -3,9 +3,11 @@
 </p>
 
 <p align="center">
-  <a href="https://pypi.org/project/descopex/"><img alt="PyPI version" src="https://img.shields.io/pypi/v/descopex?color=purple"></a>
-  <a href="https://pepy.tech/project/descopex"><img alt="PyPI total downloads" src="https://pepy.tech/badge/descopex"></a>
-  <a href="https://github.com/Peg-Wu/DeSCOPE/releases"><img alt="GitHub release" src="https://img.shields.io/github/v/release/Peg-Wu/DeSCOPE?color=orange"></a>
+  <a href="https://pypi.org/project/descopex/"><img alt="PyPI Version" src="https://img.shields.io/pypi/v/descopex?color=blue"></a>
+  <a href="https://pepy.tech/project/descopex"><img alt="PyPI Downloads" src="https://static.pepy.tech/personalized-badge/descopex?period=total&units=INTERNATIONAL_SYSTEM&left_color=GREY&right_color=GREEN&left_text=downloads"></a>
+  <a href="https://descope.readthedocs.io/en/latest/"><img alt="Read the Docs" src="https://img.shields.io/readthedocs/descope?color=red"></a>
+  <a href="https://github.com/Peg-Wu/DeSCOPE/blob/main/LICENSE"><img alt="GitHub License" src="https://img.shields.io/github/license/Peg-Wu/DeSCOPE?color=yellow"></a>
+  <a href="https://github.com/Peg-Wu/DeSCOPE/releases"><img alt="GitHub Release" src="https://img.shields.io/github/v/release/Peg-Wu/DeSCOPE?color=orange"></a>
 </p>
 
 <h3 align="center">
