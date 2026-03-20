@@ -381,9 +381,9 @@ def load_gene_embs(
 ) -> dict[str, torch.Tensor]:
     r"""
     Load gene embeddings from a PyTorch file and ensure coverage for a given set of perturbations.
-
-    For ESM2 gene embeddings , a manual alias `"TAZ"` → `"TAFAZZIN"` is applied to handle naming inconsistency.
-    If `perts_to_emb` is provided, any missing gene in the embedding dictionary is filled with a zero vector of the same dimension as existing embeddings.
+    Handles single-gene and multi-gene perturbations. Missing embeddings are replaced by zero vectors
+    for absent genes, and multi-gene perturbations are computed as the mean of all constituent genes
+    (including zeros for missing genes).
 
     **Parameters:**
 
@@ -391,7 +391,8 @@ def load_gene_embs(
         | Path to a `.pt` or `.pth` file containing a dictionary `{gene_name: embedding_tensor}`.
     perts_to_emb : list[str] or None, optional (default: None)
         | List of perturbation (gene) names that must be present in the output embedding dictionary.
-        | Missing genes are assigned zero vectors.
+        | Multi-gene perturbations must be denoted with '+' (e.g., `"GeneA+GeneB"`).
+        | If `None`, simply returns all embeddings from the file without modification.
 
     **Returns:**
 
@@ -399,23 +400,64 @@ def load_gene_embs(
         | A dictionary mapping gene names to their embedding tensors.
         | Guaranteed to include all entries in `perts_to_emb` (if not `None`).
     """
+    # Load embeddings
     gene_embs = torch.load(gene_embs_file, weights_only=False)
-    if "TAFAZZIN" in gene_embs:
-        gene_embs["TAZ"] = gene_embs["TAFAZZIN"]  # Patch
 
-    if perts_to_emb is not None:
-        pert_gene_to_emb = set(perts_to_emb)
-        pert_gene_in_emb = set(gene_embs.keys())
-        missing = list(pert_gene_to_emb - pert_gene_in_emb)
-        logger.info(
-            f"Detected {len(pert_gene_to_emb)} perturbations you want to embed, " 
-            f"missing {len(missing)} perturbations in gene_embs ({list(missing)}), " 
-            f"set these gene_embs to zero vector!"
-        )
-        zero_vector = torch.zeros_like(gene_embs[next(iter(gene_embs))])
-        missing_embs = {gene: zero_vector for gene in missing}
-        gene_embs = gene_embs | missing_embs
+    # Handle alias for TAZ
+    if "TAFAZZIN" in gene_embs and "TAZ" not in gene_embs:
+        gene_embs["TAZ"] = gene_embs["TAFAZZIN"]
     
+    if perts_to_emb is None:
+        return gene_embs
+
+    zero_vector = torch.zeros_like(gene_embs[next(iter(gene_embs))])
+
+    # Quickly count how many are single-gene perturbations and how many are multi-gene perturbations.
+    single_pert, multiple_perts = 0, 0
+    for pert in perts_to_emb:
+        if "+" in pert:
+            multiple_perts += 1
+        else:
+            single_pert += 1
+
+    logger.info(
+        f"Processing {len(perts_to_emb)} perturbations, including "
+        f"{single_pert} single-gene perturbations and {multiple_perts} multi-gene perturbations.\n"
+        f"Missing perturbations will be filled with zero vectors."
+    )
+
+    from collections import defaultdict
+    missing_single_pert, missing_multiple_perts = [], defaultdict(list)
+    for pert in perts_to_emb:
+        if pert in gene_embs:
+            continue
+
+        if '+' in pert:  # multi-gene perturbation
+            genes = [g.strip() for g in pert.split('+')]
+            gene_vectors = []
+            for g in genes:
+                if g in gene_embs:
+                    gene_vectors.append(gene_embs[g])
+                else:
+                    gene_vectors.append(zero_vector)
+                    missing_multiple_perts[pert].append(g)
+            gene_embs[pert] = torch.stack(gene_vectors, dim=0).mean(dim=0)  # mean pooling for multi-gene perturbation
+        else:  # single-gene perturbation
+            gene_embs[pert] = zero_vector
+            missing_single_pert.append(pert)
+    
+    # logging
+    multi_missing_info = [
+        f"{pert} [missing: {', '.join(genes)}]" for pert, genes in missing_multiple_perts.items()
+    ]
+
+    logger.info(
+        f"Single-gene perturbations missing from gene embeddings file ({len(missing_single_pert)}): "
+        f"{', '.join(missing_single_pert)}.\n"
+        f"Multi-gene perturbations with missing genes ({len(missing_multiple_perts)}): "
+        f"{', '.join(multi_missing_info)}."
+    )
+
     return gene_embs
 
 
