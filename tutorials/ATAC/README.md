@@ -14,11 +14,11 @@ Follow these steps to reproduce the results:
    - **Standard Training**:  
      
      ```bash
-     ./train_descope.sh        # Trains the DeSCOPE model
+     sh train_descope.sh        # Trains the DeSCOPE model
      ```
    - **Leave-One-Out Training**:  
      ```bash
-     ./train_descope_loo.sh    # Trains the DeSCOPE_LOO model
+     sh train_descope_loo.sh    # Trains the DeSCOPE_LOO model
      ```
    
 3. **Inference & Evaluation**  
