@@ -292,6 +292,14 @@ class BaseInference(CellEvalMixin, ABC):
         use_generated_control_cells: bool = False,
         seed: int = 42
     ):
+        # ----------------- Experimental Flags (UNSTABLE - Keep Disabled) -----------------
+        assert not use_generated_control_cells, (
+            "[CRITICAL]: Generated control cells are for internal debugging only. "
+            "Using them for final evaluation will cause result instability. "
+            "Please ensure `use_generated_control_cells=False` for all model evaluations."
+        )
+        # ----------------------------------------------------------------------------------
+
         gene_embs = load_gene_embs(gene_embs_file, perts_to_emb=self.test_genes)
 
         if hasattr(self.adata_ctrl.X, "toarray"):
