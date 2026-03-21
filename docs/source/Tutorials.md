@@ -121,15 +121,15 @@ Select the desired metrics from `eval_mixin.all_metrics`, place them in a list, 
 
 ```python
 results, agg_results, evaluator = evalmixin.compute_metrics(
-    adata_pred=...
-    adata_real=...
-    metrics_to_calculate=...  # Select the desired metrics from eval_mixin.all_metrics
-    de_pred=None
-    de_real=None
-    control_pert=...
-    pert_col=...
-    de_method="wilcoxon"
-    num_threads=32
+    adata_pred=...,
+    adata_real=...,
+    metrics_to_calculate=...,  # Select the desired metrics from eval_mixin.all_metrics
+    de_pred=None,
+    de_real=None,
+    control_pert=...,
+    pert_col=...,
+    de_method="wilcoxon",
+    num_threads=32,
     outdir="./cell-eval-outdir"
 )
 ```
