@@ -7,6 +7,7 @@ from .logging import (
 
 set_verbosity_info()
 
+from .models.baselines import mean_baseline
 from .models.configuration_descope import DeSCOPEConfig
 from .models.modeling_descope import DeSCOPEForATAC, DeSCOPEForRNA
 from .dataset import HFDatasetForATAC, HFDatasetForRNA
