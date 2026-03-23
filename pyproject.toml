@@ -7,7 +7,7 @@ packages = ["src/descope"]
 
 [project]
 name = "descopex"
-version = "0.0.2"
+version = "0.0.3"
 authors = [
   { name="Pengpeng Wu", email="peg2_wu@163.com" },
   { name="Hailin Wei", email="hailinwei98@gmail.com" },
