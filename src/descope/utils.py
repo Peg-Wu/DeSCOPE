@@ -407,6 +407,9 @@ def load_gene_embs(
     if "TAFAZZIN" in gene_embs and "TAZ" not in gene_embs:
         gene_embs["TAZ"] = gene_embs["TAFAZZIN"]
     
+    # Record origin genes in `gene_embs`
+    origin_genes_in_gene_embs = set(gene_embs.keys())
+    
     if perts_to_emb is None:
         return gene_embs
 
@@ -429,14 +432,14 @@ def load_gene_embs(
     from collections import defaultdict
     missing_single_pert, missing_multiple_perts = [], defaultdict(list)
     for pert in perts_to_emb:
-        if pert in gene_embs:
+        if pert in origin_genes_in_gene_embs:
             continue
 
         if '+' in pert:  # multi-gene perturbation
             genes = [g.strip() for g in pert.split('+')]
             gene_vectors = []
             for g in genes:
-                if g in gene_embs:
+                if g in origin_genes_in_gene_embs:
                     gene_vectors.append(gene_embs[g])
                 else:
                     gene_vectors.append(zero_vector)
