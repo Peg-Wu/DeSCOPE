@@ -49,7 +49,7 @@ def welcome():
     print(
         f"{logo}\n"
         f"--------------------------------------------------------------------\n"
-        f"- DeSCOPE: Decoding Single-Cell Observations of Perturbed Expression\n"
+        f"- Decoding Single-Cell Omics of Perturbation Responses Using DeSCOPE\n"
         f"- Version: {__version__}\n"
         f"- Repository: https://github.com/Peg-Wu/DeSCOPE\n"
         f"- Documentation: https://descope.readthedocs.io\n"

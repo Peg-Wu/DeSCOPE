@@ -12,7 +12,7 @@
 
 <h3 align="center">
   <p>
-    DeSCOPE: Decoding Single-Cell Observations of Perturbed Expression
+    Decoding Single-Cell Omics of Perturbation Responses Using DeSCOPE
   </p>
 </h3>
 
