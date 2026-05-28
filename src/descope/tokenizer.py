@@ -480,6 +480,10 @@ class TokenizerForRNA:
             pert_genes = cell_line_pt.obs[pert_col].values
         
         if self.normalize_before_align_features:
+            # `preprocess_rna_perturbation_adata` receive `AnnData` object only.
+            if isinstance(cell_line_pt, str):
+                cell_line_pt = sc.read_h5ad(cell_line_pt)
+
             # normalize_total and log1p first, then uniform features
             cell_line_pt = preprocess_rna_perturbation_adata(
                 adata=cell_line_pt,
