@@ -139,7 +139,8 @@ class DeSCOPEForATAC(DeSCOPEPretrainedModel):
         self, 
         ctrl_cell_tf_idf: Optional[torch.Tensor] = None,
         pert_gene_emb: Optional[torch.Tensor] = None,
-        labels: Optional[torch.Tensor] = None
+        labels: Optional[torch.Tensor] = None,
+        mse_weights: Optional[torch.Tensor] = None
     ) -> DeSCOPEForATACOutput:
         pert_embeddings = self.pert_gene_encoder(pert_gene_emb)
         _, prior_mean, prior_logvar = self.prior_encoder(
@@ -152,7 +153,12 @@ class DeSCOPEForATAC(DeSCOPEPretrainedModel):
         preds = nn.functional.softplus(preds)
 
         # Loss
-        mse_loss = nn.functional.mse_loss(preds, labels)
+        mse_loss_elementwise = nn.functional.mse_loss(preds, labels, reduction="none")
+        if mse_weights is not None:
+            mse_loss = (mse_weights * mse_loss_elementwise).mean()
+        else:
+            mse_loss = mse_loss_elementwise.mean()
+
         with torch.amp.autocast(enabled=False, device_type="cuda"):
             kl_loss = kl_loss_func(
                 prior_mean.float(),
@@ -219,7 +225,8 @@ class DeSCOPEForRNA(DeSCOPEPretrainedModel):
         self, 
         ctrl_cell_expr: Optional[torch.Tensor] = None,
         pert_gene_emb: Optional[torch.Tensor] = None,
-        labels: Optional[torch.Tensor] = None
+        labels: Optional[torch.Tensor] = None,
+        mse_weights: Optional[torch.Tensor] = None
     ) -> DeSCOPEForRNAOutput:
         pert_embeddings = self.pert_gene_encoder(pert_gene_emb)
         _, prior_mean, prior_logvar = self.prior_encoder(
@@ -232,7 +239,12 @@ class DeSCOPEForRNA(DeSCOPEPretrainedModel):
         preds = nn.functional.softplus(preds)
 
         # Loss
-        mse_loss = nn.functional.mse_loss(preds, labels)
+        mse_loss_elementwise = nn.functional.mse_loss(preds, labels, reduction="none")
+        if mse_weights is not None:
+            mse_loss = (mse_weights * mse_loss_elementwise).mean()
+        else:
+            mse_loss = mse_loss_elementwise.mean()
+
         with torch.amp.autocast(enabled=False, device_type="cuda"):
             kl_loss = kl_loss_func(
                 prior_mean.float(),

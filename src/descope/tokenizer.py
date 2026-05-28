@@ -407,7 +407,8 @@ class TokenizerForRNA:
     ...     cell_line_ft="path/to/finetune_data.h5ad",
     ...     target_sum=1e4,
     ...     pert_col="gene",
-    ...     gene_names_col="gene_symbols"
+    ...     gene_names_col="gene_symbols",
+    ...     normalize_before_align_features=False,
     ... )
 
     >>> tokenizer.tokenize(
@@ -427,7 +428,8 @@ class TokenizerForRNA:
         cell_line_ft: Union[str, sc.AnnData],
         target_sum: float = 1e4,
         pert_col: str = "gene",
-        gene_names_col: Optional[str] = None
+        gene_names_col: Optional[str] = None,
+        normalize_before_align_features: bool = False,
     ):
         if isinstance(cell_line_ft, str):
             logger.info(f"Reading cell line (finetune) from {cell_line_ft} ...")
@@ -437,6 +439,7 @@ class TokenizerForRNA:
 
         self.target_sum = target_sum
         self.pert_col = pert_col
+        self.normalize_before_align_features = normalize_before_align_features
 
         if gene_names_col is not None:
             logger.info(f"Set cell_line_ft.var_names from cell_line_ft.var['{gene_names_col}'].")
@@ -476,21 +479,37 @@ class TokenizerForRNA:
         else:
             pert_genes = cell_line_pt.obs[pert_col].values
         
-        uniform_toolkit = UniformFeatureForAnnData(
-            input_h5ad=cell_line_pt,
-            feature_names_col=gene_names_col,
-            duplicated_features_handling=duplicated_features_handling,
-        )
-        cell_line_pt = uniform_toolkit(target_feature_names=self.input_genes_list)  # keep the same inputgenes as cell_line_ft
-        cell_line_pt.obs[pert_col] = pert_genes
-        
-        # normalize_total and log1p
-        cell_line_pt = preprocess_rna_perturbation_adata(
-            adata=cell_line_pt,
-            target_sum=self.target_sum,
-            pert_col=pert_col,
-            skip_raw_counts_check=skip_raw_counts_check
-        )
+        if self.normalize_before_align_features:
+            # normalize_total and log1p first, then uniform features
+            cell_line_pt = preprocess_rna_perturbation_adata(
+                adata=cell_line_pt,
+                target_sum=self.target_sum,
+                pert_col=pert_col,
+                skip_raw_counts_check=skip_raw_counts_check
+            )
+            uniform_toolkit = UniformFeatureForAnnData(
+                input_h5ad=cell_line_pt,
+                feature_names_col=gene_names_col,
+                duplicated_features_handling=duplicated_features_handling,
+            )
+            cell_line_pt = uniform_toolkit(target_feature_names=self.input_genes_list)
+            cell_line_pt.obs[pert_col] = pert_genes
+        else:
+            uniform_toolkit = UniformFeatureForAnnData(
+                input_h5ad=cell_line_pt,
+                feature_names_col=gene_names_col,
+                duplicated_features_handling=duplicated_features_handling,
+            )
+            cell_line_pt = uniform_toolkit(target_feature_names=self.input_genes_list)  # keep the same inputgenes as cell_line_ft
+            cell_line_pt.obs[pert_col] = pert_genes
+
+            # normalize_total and log1p
+            cell_line_pt = preprocess_rna_perturbation_adata(
+                adata=cell_line_pt,
+                target_sum=self.target_sum,
+                pert_col=pert_col,
+                skip_raw_counts_check=skip_raw_counts_check
+            )
 
         logger.info("Filtering cell line (pretrain) to keep the same input_genes and perturbation genes as cell line (finetune) ...")
         if apply_pert_gene_filter:

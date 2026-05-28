@@ -1,5 +1,6 @@
 import torch
 import random
+import pickle
 import logging
 import datasets
 import numpy as np
@@ -190,7 +191,8 @@ class HFBaseDataset(Dataset):
         self,
         hf_dataset: datasets.Dataset,
         ctrl_name: str = "control",
-        gene_embs_file: str = "./ESM2_pert_features.pt"
+        gene_embs_file: str = "./ESM2_pert_features.pt",
+        mse_weights_pkl_file: Optional[str] = None
     ):
         super().__init__()
         self._check_hf_dataset_features(hf_dataset)
@@ -202,6 +204,12 @@ class HFBaseDataset(Dataset):
             perts_to_emb=self.ds.unique("pert_gene")
         )  # {gene: torch.Tensor}
 
+        if mse_weights_pkl_file is not None:
+            with open(mse_weights_pkl_file, "rb") as f:
+                self.cp2weights = pickle.load(f)  # {("celltype", "perturbation"): np.array(...)}
+        else:
+            self.cp2weights = None
+            
         # preprocess hf dataset
         self._preprocess_hf_dataset()  # features in self.ds: labels, pert_gene, pert_gene_emb, celltype
     
@@ -243,8 +251,16 @@ class HFBaseDataset(Dataset):
         gene_embs = {gene: embs.numpy() for gene, embs in self.gene_embs.items()}
         self.ds = self.ds.add_column("pert_gene_emb", pd.Series(self.ds["pert_gene"]).map(gene_embs).tolist())
 
-        # Step2: Set format to torch
-        self.ds.set_format("torch", columns=["pert_gene_emb", "labels"], output_all_columns=True)
+        # Step2: Add mse_weights from pickle if provided
+        torch_columns = ["pert_gene_emb", "labels"]
+        if self.cp2weights is not None:
+            zero_weights = np.zeros_like(next(iter(self.cp2weights.values())))
+            weights = [self.cp2weights.get((ct, pg), zero_weights) for ct, pg in zip(self.ds["celltype"], self.ds["pert_gene"])]
+            self.ds = self.ds.add_column("mse_weights", weights)
+            torch_columns.append("mse_weights")
+
+        # Step3: Set format to torch
+        self.ds.set_format("torch", columns=torch_columns, output_all_columns=True)
 
     def __getitem__(self, idx) -> dict:
         return self.ds[idx]
