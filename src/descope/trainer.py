@@ -3,11 +3,8 @@ import torch
 import inspect
 import logging
 from tqdm.auto import tqdm
-from wppkg import (
-    Trainer, 
-    Accumulator, 
-    get_logger
-)
+from wppkg import get_logger
+from wppkg.dl import Trainer, Accumulator
 
 
 def _init_logger(self) -> logging.Logger:

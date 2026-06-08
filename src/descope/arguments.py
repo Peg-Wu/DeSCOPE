@@ -1,5 +1,5 @@
 from typing import Optional
-from wppkg import TrainingArguments
+from wppkg.dl import TrainingArguments
 from dataclasses import dataclass, field
 
 

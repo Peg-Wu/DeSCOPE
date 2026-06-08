@@ -20,7 +20,7 @@ requires-python = ">=3.10"
 dependencies = [
     "torch",  # PyTorch: Installation details in README.md
     # "deepspeed",  # (Optional): Installation details in README.md
-    "wppkg==0.1.2",
+    "wppkg>=0.1.3",
     "cell-eval"  # In our experiment, we used version 0.6.6
 ]
 classifiers = [
