@@ -1,6 +1,6 @@
 import torch
 from torch import nn
-from wppkg import NoRoPE
+from wppkg.dl import NoRoPE
 from typing import Optional
 from dataclasses import dataclass
 from transformers import PreTrainedModel
