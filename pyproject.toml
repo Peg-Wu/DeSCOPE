@@ -7,7 +7,7 @@ packages = ["src/descope"]
 
 [project]
 name = "descopex"
-version = "0.0.4"
+version = "0.0.5"
 authors = [
   { name="Pengpeng Wu", email="peg2_wu@163.com" },
   { name="Hailin Wei", email="hailinwei98@gmail.com" },
@@ -20,7 +20,7 @@ requires-python = ">=3.10"
 dependencies = [
     "torch",  # PyTorch: Installation details in README.md
     # "deepspeed",  # (Optional): Installation details in README.md
-    "wppkg>=0.1.3",
+    "wppkg>=0.1.4",
     "cell-eval"  # In our experiment, we used version 0.6.6
 ]
 classifiers = [
