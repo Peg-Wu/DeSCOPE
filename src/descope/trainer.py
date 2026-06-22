@@ -2,6 +2,7 @@ import os
 import torch
 import inspect
 import logging
+from typing import Any
 from tqdm.auto import tqdm
 from wppkg import get_logger
 from wppkg.dl import Trainer, Accumulator
@@ -33,13 +34,18 @@ Trainer._init_logger = _init_logger
 
 class DeSCOPETrainer(Trainer):
     r"""
-    NOTE: 
-        1. Early stopping does not currently support resuming training. 
+    NOTE:
+        1. Early stopping does not currently support resuming training.
            If training is forcibly resumed, the early stopping callback will be reinitialized.
-        2. If you enable early stopping, ensure that `eval_every_n_epochs` and `checkpointing_steps` are aligned, 
+        2. If you enable early stopping, ensure that `eval_every_n_epochs` and `checkpointing_steps` are aligned,
            as the Trainer does not automatically save the best model.
         3. The final model is always saved at the end of training, even if early stopping is triggered.
     """
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        unwrapped_model = self.accelerator.unwrap_model(self.model)
+        self.model_forward_keys = list(inspect.signature(unwrapped_model.forward).parameters.keys())
+
     def train(self):
         # Train!
         total_batch_size = self.args.per_device_train_batch_size * self.accelerator.num_processes * self.args.gradient_accumulation_steps
@@ -90,7 +96,6 @@ class DeSCOPETrainer(Trainer):
         progress_bar.update(completed_steps)
 
         accumulator_train = Accumulator(name=["loss", "mse_loss", "kl_loss"])
-        model_forward_keys = list(inspect.signature(self.model.forward).parameters.keys())
         for epoch in range(starting_epoch, self.args.num_train_epochs):
             self.model.train()
         
@@ -101,7 +106,7 @@ class DeSCOPETrainer(Trainer):
                 active_dataloader = self.train_dataloader
             for step, batch in enumerate(active_dataloader):
                 with self.accelerator.accumulate(self.model):
-                    filtered_batch = {k: v.to(self.accelerator.device) for k, v in batch.items() if k in model_forward_keys}
+                    filtered_batch = {k: v.to(self.accelerator.device) for k, v in batch.items() if k in self.model_forward_keys}
                     outputs = self.model(**filtered_batch)
                     loss = outputs.loss
                     mse_loss = outputs.mse_loss
@@ -197,10 +202,9 @@ class DeSCOPETrainer(Trainer):
     def evaluate(self):
         self.model.eval()
         losses, mse_losses, kl_losses = [], [], []
-        model_forward_keys = list(inspect.signature(self.model.forward).parameters.keys())
         for step, batch in enumerate(self.eval_dataloader):
             with torch.no_grad():
-                filtered_batch = {k: v.to(self.accelerator.device) for k, v in batch.items() if k in model_forward_keys}
+                filtered_batch = {k: v.to(self.accelerator.device) for k, v in batch.items() if k in self.model_forward_keys}
                 outputs = self.model(**filtered_batch)
             
             loss, mse_loss, kl_loss = outputs.loss, outputs.mse_loss, outputs.kl_loss

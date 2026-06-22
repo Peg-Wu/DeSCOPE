@@ -175,6 +175,7 @@ class DatasetForRNA(BaseDataset):
 # Fast
 class HFBaseDataset(Dataset):
     MAIN_INPUT_NAME = None
+    INVOLVE_CONTROL_TO_CONTROL = False
     RANDOM_MAPPING_CONTROL_TO_CONTROL = False
 
     def __init_subclass__(cls, **kwargs):
@@ -198,7 +199,7 @@ class HFBaseDataset(Dataset):
         self._check_hf_dataset_features(hf_dataset)
         self.ds = hf_dataset  # features in self.ds: labels, pert_gene, celltype
         self.ctrl_name = ctrl_name
-        self.ctrl_cell_indices = self.get_ctrl_cell_indices_for_each_celltype()
+        self.ctrl_cell_indices, self.pert_cell_indices = self.get_ctrl_and_pert_cell_indices_for_each_celltype()
         self.gene_embs = load_gene_embs(
             gene_embs_file=gene_embs_file,
             perts_to_emb=self.ds.unique("pert_gene")
@@ -212,6 +213,12 @@ class HFBaseDataset(Dataset):
             
         # preprocess hf dataset
         self._preprocess_hf_dataset()  # features in self.ds: labels, pert_gene, pert_gene_emb, celltype
+
+        # set valid indices (according to INVOLVE_CONTROL_TO_CONTROL)
+        if not self.INVOLVE_CONTROL_TO_CONTROL:
+            self.valid_indices = [idx for indices in self.pert_cell_indices.values() for idx in indices]
+        else:
+            self.valid_indices = list(range(len(self.ds)))
     
     @staticmethod
     def _check_hf_dataset_features(hf_dataset: datasets.Dataset):
@@ -225,7 +232,7 @@ class HFBaseDataset(Dataset):
                 "Please make sure that the dataset contains the following features: labels, pert_gene, celltype."
             )
     
-    def get_ctrl_cell_indices_for_each_celltype(self) -> dict[str, list[int]]:
+    def get_ctrl_and_pert_cell_indices_for_each_celltype(self) -> tuple[dict[str, list[int]], dict[str, list[int]]]:
         celltype = np.array(self.ds["celltype"])
         pert_gene = np.array(self.ds["pert_gene"])
 
@@ -234,17 +241,22 @@ class HFBaseDataset(Dataset):
             "pert_gene": pert_gene
         })
 
-        ctrl_cell_indices = {
-            celltype: indices
-            for (celltype, pert_gene), indices in df.groupby(["celltype", "pert_gene"]).groups.items() 
-            if pert_gene == self.ctrl_name
-        }
+        ctrl_cell_indices = {}
+        pert_cell_indices = {}
+
+        for (celltype, pert_gene), indices in df.groupby(["celltype", "pert_gene"]).groups.items():
+            if pert_gene == self.ctrl_name:
+                ctrl_cell_indices[celltype] = indices.tolist()
+            else:
+                if celltype not in pert_cell_indices:
+                    pert_cell_indices[celltype] = []
+                pert_cell_indices[celltype].extend(indices.tolist())
 
         for celltype, indices in ctrl_cell_indices.items():
             if len(indices) == 0:
                 raise ValueError(f"No control cells found for celltype {celltype}!")
             
-        return ctrl_cell_indices
+        return ctrl_cell_indices, pert_cell_indices
 
     def _preprocess_hf_dataset(self):
         # Step1: Add pert_gene_emb to hf dataset
@@ -254,20 +266,24 @@ class HFBaseDataset(Dataset):
         # Step2: Add mse_weights from pickle if provided
         torch_columns = ["pert_gene_emb", "labels"]
         if self.cp2weights is not None:
-            zero_weights = np.zeros_like(next(iter(self.cp2weights.values())))
-            weights = [self.cp2weights.get((ct, pg), zero_weights) for ct, pg in zip(self.ds["celltype"], self.ds["pert_gene"])]
+            ones_weights = np.ones_like(next(iter(self.cp2weights.values())))
+            weights = [self.cp2weights.get((ct, pg), ones_weights) for ct, pg in zip(self.ds["celltype"], self.ds["pert_gene"])]
             self.ds = self.ds.add_column("mse_weights", weights)
             torch_columns.append("mse_weights")
 
         # Step3: Set format to torch
         self.ds.set_format("torch", columns=torch_columns, output_all_columns=True)
 
+
     def __getitem__(self, idx) -> dict:
-        return self.ds[idx]
-    
+        real_idx = self.valid_indices[idx]
+        return self.ds[real_idx]
+
     def __getitems__(self, keys: list) -> list:
         """Can be used to get a batch using a list of integers indices."""
-        batch = self.ds.__getitem__(keys)
+        # Map keys (indices in valid_indices) to real indices in the dataset
+        real_indices = [self.valid_indices[k] for k in keys]
+        batch = self.ds.__getitem__(real_indices)
         selected_ctrl_indices = []
         if self.RANDOM_MAPPING_CONTROL_TO_CONTROL:
             for ct in batch["celltype"]:
@@ -275,20 +291,20 @@ class HFBaseDataset(Dataset):
                     int(random.choice(self.ctrl_cell_indices[ct]))
                 )
         else:
-            for ct, pg, cell_idx in zip(batch["celltype"], batch["pert_gene"], keys):
-                if pg != "non-targeting":
+            for ct, pg, real_idx in zip(batch["celltype"], batch["pert_gene"], real_indices):
+                if pg != self.ctrl_name:
                     selected_ctrl_indices.append(
                         int(random.choice(self.ctrl_cell_indices[ct]))
                     )
                 else:
-                    selected_ctrl_indices.append(int(cell_idx))
+                    selected_ctrl_indices.append(int(real_idx))
         # MAIN_INPUT_NAME, pert_gene_emb, labels, pert_gene, celltype
         batch[self.MAIN_INPUT_NAME] = self.ds.__getitem__(selected_ctrl_indices)["labels"]
 
         return batch
-    
+
     def __len__(self) -> int:
-        return len(self.ds)
+        return len(self.valid_indices)
 
     @staticmethod
     def collate_fn(batch):
@@ -298,10 +314,12 @@ class HFBaseDataset(Dataset):
 # Fast
 class HFDatasetForATAC(HFBaseDataset):
     MAIN_INPUT_NAME = "ctrl_cell_tf_idf"
+    INVOLVE_CONTROL_TO_CONTROL = False
     RANDOM_MAPPING_CONTROL_TO_CONTROL = False
 
 
 # Fast
 class HFDatasetForRNA(HFBaseDataset):
     MAIN_INPUT_NAME = "ctrl_cell_expr"
+    INVOLVE_CONTROL_TO_CONTROL = False
     RANDOM_MAPPING_CONTROL_TO_CONTROL = False
