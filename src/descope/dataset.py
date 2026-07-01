@@ -314,12 +314,12 @@ class HFBaseDataset(Dataset):
 # Fast
 class HFDatasetForATAC(HFBaseDataset):
     MAIN_INPUT_NAME = "ctrl_cell_tf_idf"
-    INVOLVE_CONTROL_TO_CONTROL = False
+    INVOLVE_CONTROL_TO_CONTROL = True
     RANDOM_MAPPING_CONTROL_TO_CONTROL = False
 
 
 # Fast
 class HFDatasetForRNA(HFBaseDataset):
     MAIN_INPUT_NAME = "ctrl_cell_expr"
-    INVOLVE_CONTROL_TO_CONTROL = False
+    INVOLVE_CONTROL_TO_CONTROL = True
     RANDOM_MAPPING_CONTROL_TO_CONTROL = False
