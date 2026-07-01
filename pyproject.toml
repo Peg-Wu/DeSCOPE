@@ -21,7 +21,8 @@ dependencies = [
     "torch",  # PyTorch: Installation details in README.md
     # "deepspeed",  # (Optional): Installation details in README.md
     "wppkg>=0.1.4",
-    "cell-eval"  # In our experiment, we used version 0.6.6
+    "cell-eval==0.6.6",  # In our experiment, we used version 0.6.6
+    "pdex==0.1.28"
 ]
 classifiers = [
     "Programming Language :: Python :: 3",
