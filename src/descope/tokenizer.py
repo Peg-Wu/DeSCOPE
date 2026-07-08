@@ -55,7 +55,8 @@ def _merge_list_of_dicts(list_of_dicts: list[dict]) -> dict:
 
 def tokenize_adata_to_hf_dataset(
     adata: sc.AnnData,
-    cell_line_name: str,
+    cell_line_name: Union[str, list[str]] = None,
+    cell_line_col: Optional[str] = None,
     pert_col: str = "gene",
     chunk_size: int = 20000
 ) -> Dataset:
@@ -72,9 +73,15 @@ def tokenize_adata_to_hf_dataset(
     adata : sc.AnnData
         | Single-cell dataset in AnnData format containing gene expression matrix (in `.X`)
         | and perturbation annotations (in `.obs[pert_col]`).
-    cell_line_name : str
+    cell_line_name : str, list[str], optional
         | Name of the cell line or cell type associated with all cells in the AnnData object.
-        | This will be added as a constant metadata field (`"celltype"`) in the output dataset.
+        | If a string, it will be used as the celltype for all cells.
+        | If a list, its length must match the number of cells in `adata`.
+        | If None, `cell_line_col` must be provided.
+    cell_line_col : str, optional
+        | Column name in `adata.obs` that contains the cell line name for each cell.
+        | If provided, each cell's celltype will be read from this column.
+        | Mutually exclusive with `cell_line_name`.
     pert_col : str, default="gene"
         | Column name in `adata.obs` that contains the perturbation labels (e.g., gene names)
     chunk_size : int, default=20000
@@ -87,7 +94,7 @@ def tokenize_adata_to_hf_dataset(
         | A Hugging Face Dataset with the following columns:
         | - `"labels"`: Gene expression vector for each cell (as a list of floats).
         | - `"pert_gene"`: Perturbation label (e.g., gene name or "control").
-        | - `"celltype"`: Constant string indicating the cell line name provided as input.
+        | - `"celltype"`: Cell line name for each cell.
 
     **Notes**
 
@@ -96,11 +103,31 @@ def tokenize_adata_to_hf_dataset(
     - The resulting dataset is suitable for use with Hugging Face Transformers or other
       deep learning pipelines that expect dictionary-like batched inputs.
     """
+    # Parameter validation
+    if cell_line_name is None and cell_line_col is None:
+        raise ValueError("Either `cell_line_name` or `cell_line_col` must be provided.")
+    if cell_line_name is not None and cell_line_col is not None:
+        raise ValueError("Only one of `cell_line_name` or `cell_line_col` should be provided, not both.")
+
+    # Get celltype for each cell
+    if cell_line_col is not None:
+        celltypes = adata.obs[cell_line_col].tolist()
+    elif isinstance(cell_line_name, list):
+        if len(cell_line_name) != adata.n_obs:
+            raise ValueError(
+                f"Length of cell_line_name ({len(cell_line_name)}) must match "
+                f"number of cells ({adata.n_obs})"
+            )
+        celltypes = cell_line_name
+    else:  # str
+        celltypes = [cell_line_name] * adata.n_obs
+
     cell_dicts: list[dict] = [
-        {"labels": labels, "pert_gene": pert_gene, "celltype": cell_line_name} 
-        for labels, pert_gene in zip(
-            adata.X.toarray() if hasattr(adata.X, "toarray") else adata.X, 
-            adata.obs[pert_col].tolist()
+        {"labels": labels, "pert_gene": pert_gene, "celltype": celltype}
+        for labels, pert_gene, celltype in zip(
+            adata.X.toarray() if hasattr(adata.X, "toarray") else adata.X,
+            adata.obs[pert_col].tolist(),
+            celltypes
         )
     ]
     all_chunks: list[Dataset] = []
@@ -116,7 +143,8 @@ def tokenize_adata_to_hf_dataset(
 
 def tokenize_adata_to_hf_dataset_for_atac(
     adata: Union[str, sc.AnnData],
-    cell_line_name: str,
+    cell_line_name: Union[str, list[str]] = None,
+    cell_line_col: Optional[str] = None,
     perts_to_include: list[str] = None,
     perts_to_exclude: list[str] = None,
     topk_ccres: int = 50000,
@@ -132,8 +160,12 @@ def tokenize_adata_to_hf_dataset_for_atac(
 
     adata : str or sc.AnnData
         | Input AnnData (or path to .h5ad) with ATAC profiles and perturbation labels.
-    cell_line_name : str
-        | Cell line name; saved as `"celltype"` in the dataset.
+    cell_line_name : str, list[str], optional
+        | Cell line name for all cells, or a list of cell line names for each cell.
+        | If None, `cell_line_col` must be provided.
+    cell_line_col : str, optional
+        | Column name in `adata.obs` containing cell line names for each cell.
+        | Mutually exclusive with `cell_line_name`.
     perts_to_include / perts_to_exclude : list of str, optional
         | Mutually exclusive filters for perturbations. Only one may be specified.
         | If both are None, all perturbations are retained.
@@ -160,7 +192,7 @@ def tokenize_adata_to_hf_dataset_for_atac(
         adata = sc.read_h5ad(adata)
     else:
         adata = adata.copy()
-    
+
     preprocessed_adata = preprocess_atac_perturbation_adata_consistent_with_epiagent(
         adata=adata,
         topk_ccres=topk_ccres,
@@ -179,6 +211,7 @@ def tokenize_adata_to_hf_dataset_for_atac(
     tokenized_dataset = tokenize_adata_to_hf_dataset(
         adata=preprocessed_adata,
         cell_line_name=cell_line_name,
+        cell_line_col=cell_line_col,
         pert_col=pert_col,
         chunk_size=chunk_size
     )
@@ -189,7 +222,8 @@ def tokenize_adata_to_hf_dataset_for_atac(
 
 def tokenize_adata_to_hf_dataset_for_rna(
     adata: Union[str, sc.AnnData],
-    cell_line_name: str,
+    cell_line_name: Union[str, list[str]] = None,
+    cell_line_col: Optional[str] = None,
     perts_to_include: list[str] = None,
     perts_to_exclude: list[str] = None,
     target_sum: float = 1e4,
@@ -206,8 +240,12 @@ def tokenize_adata_to_hf_dataset_for_rna(
 
     adata : str or sc.AnnData
         | Input AnnData (or path to .h5ad) with raw gene counts and perturbation labels.
-    cell_line_name : str
-        | Cell line name; stored as `"celltype"` in the output dataset.
+    cell_line_name : str, list[str], optional
+        | Cell line name for all cells, or a list of cell line names for each cell.
+        | If None, `cell_line_col` must be provided.
+    cell_line_col : str, optional
+        | Column name in `adata.obs` containing cell line names for each cell.
+        | Mutually exclusive with `cell_line_name`.
     perts_to_include / perts_to_exclude : list of str, optional
         | Mutually exclusive filters for perturbations. Only one may be specified.
         | If both are None, all perturbations are retained.
@@ -236,7 +274,7 @@ def tokenize_adata_to_hf_dataset_for_rna(
         adata = sc.read_h5ad(adata)
     else:
         adata = adata.copy()
-    
+
     preprocessed_adata = preprocess_rna_perturbation_adata(
         adata=adata,
         target_sum=target_sum,
@@ -256,6 +294,7 @@ def tokenize_adata_to_hf_dataset_for_rna(
     tokenized_dataset = tokenize_adata_to_hf_dataset(
         adata=preprocessed_adata,
         cell_line_name=cell_line_name,
+        cell_line_col=cell_line_col,
         pert_col=pert_col,
         chunk_size=chunk_size
     )

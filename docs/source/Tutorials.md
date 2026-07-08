@@ -120,7 +120,7 @@ print(eval_mixin.all_anndata_pair_metrics)
 Select the desired metrics from `eval_mixin.all_metrics`, place them in a list, and pass that list to the `.compute_metrics()` method.
 
 ```python
-results, agg_results, evaluator = evalmixin.compute_metrics(
+results, agg_results, evaluator = eval_mixin.compute_metrics(
     adata_pred=...,
     adata_real=...,
     metrics_to_calculate=...,  # Select the desired metrics from eval_mixin.all_metrics
