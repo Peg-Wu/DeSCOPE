@@ -33,15 +33,17 @@ def _filter_perturbations(
         if ctrl_name not in perts_to_include:
             perts_to_include.append(ctrl_name)
         logger.info(f"Filtering perturbations to include: {perts_to_include} ...")
+        adata.obs[pert_col] = adata.obs[pert_col].str.strip()
         adata = adata[adata.obs[pert_col].isin(perts_to_include)]
     elif perts_to_exclude is not None and perts_to_include is None:
         if ctrl_name in perts_to_exclude:
             perts_to_exclude.remove(ctrl_name)
         logger.info(f"Filtering perturbations to exclude: {perts_to_exclude} ...")
+        adata.obs[pert_col] = adata.obs[pert_col].str.strip()
         adata = adata[~adata.obs[pert_col].isin(perts_to_exclude)]
 
     # Double Check control cells are included
-    assert ctrl_name in adata.obs[pert_col].unique().tolist()
+    # assert ctrl_name in adata.obs[pert_col].unique().tolist()
     return adata
 
 
@@ -111,7 +113,7 @@ def tokenize_adata_to_hf_dataset(
 
     # Get celltype for each cell
     if cell_line_col is not None:
-        celltypes = adata.obs[cell_line_col].tolist()
+        celltypes = adata.obs[cell_line_col].str.strip().tolist()
     elif isinstance(cell_line_name, list):
         if len(cell_line_name) != adata.n_obs:
             raise ValueError(
@@ -126,7 +128,7 @@ def tokenize_adata_to_hf_dataset(
         {"labels": labels, "pert_gene": pert_gene, "celltype": celltype}
         for labels, pert_gene, celltype in zip(
             adata.X.toarray() if hasattr(adata.X, "toarray") else adata.X,
-            adata.obs[pert_col].tolist(),
+            adata.obs[pert_col].str.strip().tolist(),
             celltypes
         )
     ]

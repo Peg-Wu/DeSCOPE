@@ -2,8 +2,9 @@
 
 See [examples](https://github.com/Peg-Wu/DeSCOPE/tree/main/tutorials/) for:
 
-- scRNA unseen gene perturbation prediction
-- scATAC unseen gene perturbation prediction
+- scRNA unseen gene perturbation prediction (RNA_Gene Folder)
+- scRNA unseen drug perturbation prediction (RNA_Drug Folder)
+- scATAC unseen gene perturbation prediction (ATAC_Gene Folder)
 
 ## Tips
 

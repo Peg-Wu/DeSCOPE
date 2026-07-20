@@ -1,0 +1,3 @@
+# Specify distributed_type as `DEEPSPEED` or `MULTI_GPU`
+# If you are using MULTI_GPU, please do not pass a DeepSpeed config file.
+distributed_type: MULTI_GPU  # DEEPSPEED
