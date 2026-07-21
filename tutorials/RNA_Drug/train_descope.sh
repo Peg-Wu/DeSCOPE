@@ -1,8 +1,8 @@
 #!/bin/bash
 
 output_dir="./tahoe100m_trainer_output"
-tokenized_datasets_dir="./tahoe100m_tokenized"
-keep_in_memory=True
+tokenized_datasets_dir="/fse/home/wupengpeng/perturbation_datasets/origin_datasets/Tahoe_100M_Tokenized"
+keep_in_memory=False
 ctrl_name="DMSO_TF_0.0"
 gene_embs_file="./metadata/tahoe100m_drug_dose_embed.pt"
 
@@ -30,7 +30,7 @@ TRAINPARAMS="
     --num_train_epochs=20 \
     --logging_steps=50 \
     --checkpointing_steps=epoch-10 \
-    --per_device_train_batch_size=128 \
+    --per_device_train_batch_size=256 \
     --gradient_accumulation_steps=1 \
     --max_grad_norm=1.0 \
     --learning_rate=1e-4 \
@@ -48,10 +48,10 @@ TRAINPARAMS="
     --alpha_kl_loss=1.0"
 
 
-export CUDA_VISIBLE_DEVICES="0"
+export CUDA_VISIBLE_DEVICES="0,1,2,3"
 accelerate launch \
     --config_file="./accelerate_config.yaml" \
-    --num_processes=1 \
+    --num_processes=4 \
     3_train.py \
     $TRAINPARAMS \
     $DATAPARAMS \
