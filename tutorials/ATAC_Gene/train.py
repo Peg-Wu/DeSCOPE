@@ -51,8 +51,8 @@ def main():
     if train_args.pretrained_model_name_or_path is None:
         print("Training from scratch ...")
         config = DeSCOPEConfig(
-            input_pert_gene_embedding_size=len(train_ds[0]["pert_gene_emb"]),
-            input_length=len(train_ds[0]["labels"]),
+            input_pert_gene_embedding_size=train_ds[0]["pert_gene_emb"].shape[-1],
+            input_length=train_ds[0]["labels"].shape[-1],
             hidden_act=model_args.hidden_act,
             hidden_size=model_args.hidden_size,
             hidden_dropout=model_args.hidden_dropout,

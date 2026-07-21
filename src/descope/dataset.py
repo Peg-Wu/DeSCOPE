@@ -208,11 +208,13 @@ class HFBaseDataset(Dataset):
         if mse_weights_pkl_file is not None:
             with open(mse_weights_pkl_file, "rb") as f:
                 self.cp2weights = pickle.load(f)  # {("celltype", "perturbation"): np.array(...)}
+                self.cp2weights = {k: torch.from_numpy(v) for k, v in self.cp2weights.items()}  # {("celltype", "perturbation"): torch.tensor(...)}
+                self.ones_weight = torch.ones_like(next(iter(self.cp2weights.values())))
         else:
             self.cp2weights = None
             
         # preprocess hf dataset
-        self._preprocess_hf_dataset()  # features in self.ds: labels, pert_gene, pert_gene_emb, celltype
+        self._preprocess_hf_dataset()  # features in self.ds: labels, pert_gene, celltype
 
         # set valid indices (according to INVOLVE_CONTROL_TO_CONTROL)
         if not self.INVOLVE_CONTROL_TO_CONTROL:
@@ -236,54 +238,54 @@ class HFBaseDataset(Dataset):
         celltype = np.array(self.ds["celltype"])
         pert_gene = np.array(self.ds["pert_gene"])
 
-        df = pd.DataFrame({
-            "celltype": celltype,
-            "pert_gene": pert_gene
-        })
-
         ctrl_cell_indices = {}
         pert_cell_indices = {}
 
-        for (celltype, pert_gene), indices in df.groupby(["celltype", "pert_gene"]).groups.items():
-            if pert_gene == self.ctrl_name:
-                ctrl_cell_indices[celltype] = indices.tolist()
-            else:
-                if celltype not in pert_cell_indices:
-                    pert_cell_indices[celltype] = []
-                pert_cell_indices[celltype].extend(indices.tolist())
+        unique_celltypes = np.unique(celltype)
 
-        for celltype, indices in ctrl_cell_indices.items():
-            if len(indices) == 0:
-                raise ValueError(f"No control cells found for celltype {celltype}!")
-            
+        for ct in unique_celltypes:
+            ct_mask = celltype == ct
+            ctrl_mask = (pert_gene == self.ctrl_name) & ct_mask
+
+            ctrl_indices = np.where(ctrl_mask)[0]
+            pert_indices = np.where(ct_mask & ~ctrl_mask)[0]
+
+            if len(ctrl_indices) == 0:
+                raise ValueError(f"No control cells found for celltype {ct}!")
+
+            ctrl_cell_indices[ct] = ctrl_indices.tolist()
+            pert_cell_indices[ct] = pert_indices.tolist()
+
         return ctrl_cell_indices, pert_cell_indices
 
     def _preprocess_hf_dataset(self):
-        # Step1: Add pert_gene_emb to hf dataset
-        gene_embs = {gene: embs.numpy() for gene, embs in self.gene_embs.items()}
-        self.ds = self.ds.add_column("pert_gene_emb", pd.Series(self.ds["pert_gene"]).map(gene_embs).tolist())
-
-        # Step2: Add mse_weights from pickle if provided
-        torch_columns = ["pert_gene_emb", "labels"]
-        if self.cp2weights is not None:
-            ones_weights = np.ones_like(next(iter(self.cp2weights.values())))
-            weights = [self.cp2weights.get((ct, pg), ones_weights) for ct, pg in zip(self.ds["celltype"], self.ds["pert_gene"])]
-            self.ds = self.ds.add_column("mse_weights", weights)
-            torch_columns.append("mse_weights")
-
-        # Step3: Set format to torch
+        torch_columns = ["labels"]
         self.ds.set_format("torch", columns=torch_columns, output_all_columns=True)
-
 
     def __getitem__(self, idx) -> dict:
         real_idx = self.valid_indices[idx]
-        return self.ds[real_idx]
+        # return self.ds[real_idx]
+        return self.__getitems__([real_idx])
 
     def __getitems__(self, keys: list) -> list:
         """Can be used to get a batch using a list of integers indices."""
         # Map keys (indices in valid_indices) to real indices in the dataset
         real_indices = [self.valid_indices[k] for k in keys]
-        batch = self.ds.__getitem__(real_indices)
+        batch = self.ds.__getitem__(real_indices)  # labels, pert_gene, celltype
+
+        # Extract `pert_gene_emb`
+        batch["pert_gene_emb"] = torch.stack(
+            [self.gene_embs[g] for g in batch["pert_gene"]]
+        )
+
+        # Extract `mse_weights`
+        if self.cp2weights is not None:
+            batch["mse_weights"] = torch.stack([
+                self.cp2weights.get((ct, pg), self.ones_weight)
+                for ct, pg in zip(batch["celltype"], batch["pert_gene"])
+            ])
+
+        # Assign control cells
         selected_ctrl_indices = []
         if self.RANDOM_MAPPING_CONTROL_TO_CONTROL:
             for ct in batch["celltype"]:
