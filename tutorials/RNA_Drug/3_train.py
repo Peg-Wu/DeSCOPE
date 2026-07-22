@@ -1,5 +1,6 @@
 import os
 import datasets
+from accelerate import PartialState
 from descope import set_verbosity_warning
 from descope.trainer import DeSCOPETrainer
 from descope.dataset import HFDatasetForRNA
@@ -12,6 +13,10 @@ from descope.arguments import (
     DeSCOPEModelArguments, 
     DeSCOPETrainingArguments
 )
+
+
+def print_rank0(msg: str):
+    PartialState().print(msg)
 
 
 def main():
@@ -49,7 +54,7 @@ def main():
 
     # create model
     if train_args.pretrained_model_name_or_path is None:
-        print("Training from scratch ...")
+        print_rank0("Training from scratch ...")
         config = DeSCOPEConfig(
             input_pert_gene_embedding_size=train_ds[0]["pert_gene_emb"].shape[-1],
             input_length=train_ds[0]["labels"].shape[-1],
@@ -68,7 +73,7 @@ def main():
             alpha_kl_loss=train_args.alpha_kl_loss
         )
     else:
-        print(f"Loading pretrained model from {train_args.pretrained_model_name_or_path} ...")
+        print_rank0(f"Loading pretrained model from {train_args.pretrained_model_name_or_path} ...")
         model = DeSCOPEForRNA.from_pretrained(
             train_args.pretrained_model_name_or_path,
             alpha_mse_loss=train_args.alpha_mse_loss,

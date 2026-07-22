@@ -4,7 +4,6 @@ import pickle
 import logging
 import datasets
 import numpy as np
-import pandas as pd
 import scanpy as sc
 
 from typing import Union, Optional
@@ -235,15 +234,22 @@ class HFBaseDataset(Dataset):
             )
     
     def get_ctrl_and_pert_cell_indices_for_each_celltype(self) -> tuple[dict[str, list[int]], dict[str, list[int]]]:
-        celltype = np.array(self.ds["celltype"])
-        pert_gene = np.array(self.ds["pert_gene"])
+        celltype = np.array(self.ds["celltype"][:])
+        pert_gene = np.array(self.ds["pert_gene"][:])
 
         ctrl_cell_indices = {}
         pert_cell_indices = {}
 
         unique_celltypes = np.unique(celltype)
 
-        for ct in unique_celltypes:
+        from tqdm.auto import tqdm
+        from accelerate import PartialState
+
+        for ct in tqdm(
+            unique_celltypes, 
+            disable=not PartialState().is_main_process,
+            desc="Extracting ctrl and pert cell indices"
+        ):
             ct_mask = celltype == ct
             ctrl_mask = (pert_gene == self.ctrl_name) & ct_mask
 
