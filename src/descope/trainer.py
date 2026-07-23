@@ -98,12 +98,15 @@ class DeSCOPETrainer(Trainer):
         accumulator_train = Accumulator(name=["loss", "mse_loss", "kl_loss"])
         for epoch in range(starting_epoch, self.args.num_train_epochs):
             self.model.train()
-        
+
             if self.args.resume_from_checkpoint and epoch == starting_epoch and resume_step is not None:
                 # We skip the first `n` batches in the dataloader when resuming from a checkpoint
                 active_dataloader = self.accelerator.skip_first_batches(self.train_dataloader, resume_step)
             else:
                 active_dataloader = self.train_dataloader
+
+            grad_norm = None  # Initialize grad_norm to avoid UnboundLocalError with gradient accumulation
+
             for step, batch in enumerate(active_dataloader):
                 with self.accelerator.accumulate(self.model):
                     filtered_batch = {k: v.to(self.accelerator.device) for k, v in batch.items() if k in self.model_forward_keys}
@@ -122,14 +125,14 @@ class DeSCOPETrainer(Trainer):
                 if self.accelerator.sync_gradients:
                     progress_bar.update(1)
                     completed_steps += 1
-                
+
                 # We keep track of the loss at each logging_steps
                 accumulator_train.add(
                     self.accelerator.reduce(loss.detach().clone(), "mean").item(),
                     self.accelerator.reduce(mse_loss.detach().clone(), "mean").item(),
                     self.accelerator.reduce(kl_loss.detach().clone(), "mean").item()
                 )
-                
+
                 # Log training progress
                 if completed_steps % self.args.logging_steps == 0:
                     accumulator_train.mean()
@@ -141,7 +144,7 @@ class DeSCOPETrainer(Trainer):
                     }
                     log_dict = log_dict | extra_log_dict
                     log_dict_round = {
-                        k: round(v, 6) if k == "lr" else round(v, 4)
+                        k: round(v, 6) if k == "lr" else (round(v, 4) if v is not None else None)
                         for k, v in log_dict.items()
                     }
                     self.logger.info({"epoch": epoch, "step": completed_steps, **log_dict_round})
