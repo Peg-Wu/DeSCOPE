@@ -1,5 +1,5 @@
 
-## 🧬 scRNA Perturbation Prediction
+## 💊 scRNA Perturbation Prediction (Drug)
 
 This tutorial provides a complete workflow for pretraining DeSCOPE on the full Tahoe-100M dataset and subsequently performing perturbation prediction on the Sci-Plex3 dataset through either direct inference or fine-tuning.
 
