@@ -14,11 +14,13 @@ The original Tahoe-100M dataset contains approximately **60,000 genes**. To enab
 
 We provide three pretrained DeSCOPE models with different gene vocabulary sizes. Each model is trained using a corresponding gene vocabulary file, allowing users to select an appropriate model according to their computational resources and application requirements.
 
-|       🎉 Pretrained Model      |                📚 Gene Vocabulary                |                         🤗 Hugging Face Repository                         |
-| :----------------------------: | :----------------------------------------------: | :------------------------------------------------------------------------: |
-|   `descope-tahoe100m-2k-hvgs`  |   `tahoe100m_pretrain/HVGs/merged_2k_hvgs.pkl`   |   [Download Link](https://huggingface.co/wpp02/descope-tahoe100m-2k-hvgs)  |
-|   `descope-tahoe100m-5k-hvgs`  |   `tahoe100m_pretrain/HVGs/merged_5k_hvgs.pkl`   |   [Download Link](https://huggingface.co/wpp02/descope-tahoe100m-5k-hvgs)  |
-| `descope-tahoe100m-12059-hvgs` | `tahoe100m_pretrain/HV Gs/merged_12059_hvgs.pkl` | [Download Link](https://huggingface.co/wpp02/descope-tahoe100m-12059-hvgs) |
+> 🌏 All pretrained models were trained for 10 epochs with a batch size of 1024.
+
+|       🎉 Pretrained Model       |                📚 Gene Vocabulary                |                  🤗 Hugging Face Repository                   |
+| :----------------------------: | :---------------------------------------------: | :----------------------------------------------------------: |
+|  `descope-tahoe100m-2k-hvgs`   |  `tahoe100m_pretrain/HVGs/merged_2k_hvgs.pkl`   | [Download Link](https://huggingface.co/wpp02/descope-tahoe100m-2k-hvgs) |
+|  `descope-tahoe100m-5k-hvgs`   |  `tahoe100m_pretrain/HVGs/merged_5k_hvgs.pkl`   | [Download Link](https://huggingface.co/wpp02/descope-tahoe100m-5k-hvgs) |
+| `descope-tahoe100m-12059-hvgs` | `tahoe100m_pretrain/HVGs/merged_12059_hvgs.pkl` | [Download Link](https://huggingface.co/wpp02/descope-tahoe100m-12059-hvgs) |
 
 ---
 
