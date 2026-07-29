@@ -1,0 +1,1 @@
+This tutorial demonstrates how to perform zero-shot evaluation and fine-tuning on the DeSCOPE model pretrained on Tahoe-100M.
