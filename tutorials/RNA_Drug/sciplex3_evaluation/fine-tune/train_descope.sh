@@ -54,6 +54,7 @@ accelerate launch \
     --config_file="./accelerate_config.yaml" \
     --num_processes=1 \
     2_train.py \
+    --pretrained_model_name_or_path=$pretrained_model_name_or_path \
     $TRAINPARAMS \
     $DATAPARAMS \
     $MODELPARAMS
