@@ -30,3 +30,10 @@ Due to the unprecedented scale of the Tahoe-100M dataset, we adopted a **pretrai
 
 Alternatively, if sufficient computational resources are available, users can adopt the **DeSCOPE_LOO** strategy, which follows the same leave-one-out training paradigm used for gene perturbation prediction. This approach enables more task-specific adaptation but requires substantially higher computational resources.
 
+### 🏠 Performance
+
+- The figure below illustrates the performance of DeSCOPE on the **Sci-Plex3** dataset.
+- The pre-trained model (12059_hvgs) covers **482** out of 2,000 genes, and its metrics were calculated based on these 482 genes.
+- The `DeSCOPE_Pretrain_12059_HVGs (zero-shot)` model exhibits a notably high DE overlap. This is a common phenomenon in perturbation tasks, where the **DE overlap on the validation set typically shows a continuous downward trend during training.**
+
+![scrna_drug_perturbation_performance](scrna_drug_perturbation_performance.png)
