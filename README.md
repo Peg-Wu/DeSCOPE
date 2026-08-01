@@ -132,17 +132,3 @@ We sincerely thank the authors of following open-source projects:
 - [wppkg](https://github.com/Peg-Wu/wppkg)
 
 </details>
-
----
-
-## Star History
-
-<p align="center">
-  <a href="https://www.star-history.com/?repos=Peg-Wu%2FDeSCOPE&type=date&legend=top-left">
-    <img 
-      src="https://api.star-history.com/svg?repos=Peg-Wu/DeSCOPE&type=date&legend=top-left"
-      width="600"
-      alt="Star History Chart"
-    />
-  </a>
-</p>
