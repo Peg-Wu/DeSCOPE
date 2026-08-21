@@ -41,6 +41,7 @@ def main():
             for cellline_dir in hf_dataset_dir
         ])
 
+    HFDatasetForRNA.INVOLVE_CONTROL_TO_CONTROL = True
     train_ds = HFDatasetForRNA(
         hf_dataset=hf_dataset,
         ctrl_name=data_args.ctrl_name,
