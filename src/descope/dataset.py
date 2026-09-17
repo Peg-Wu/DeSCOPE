@@ -209,6 +209,7 @@ class HFBaseDataset(Dataset):
                 self.cp2weights = pickle.load(f)  # {("celltype", "perturbation"): np.array(...)}
                 self.cp2weights = {k: torch.from_numpy(v) for k, v in self.cp2weights.items()}  # {("celltype", "perturbation"): torch.tensor(...)}
                 self.ones_weight = torch.ones_like(next(iter(self.cp2weights.values())))
+                self.ones_weight = self.ones_weight / len(self.ones_weight)
         else:
             self.cp2weights = None
             
