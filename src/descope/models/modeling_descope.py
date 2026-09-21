@@ -155,7 +155,7 @@ class DeSCOPEForATAC(DeSCOPEPretrainedModel):
         # Loss
         mse_loss_elementwise = nn.functional.mse_loss(preds, labels, reduction="none")
         if mse_weights is not None:
-            mse_loss = (mse_weights * mse_loss_elementwise).mean()
+            mse_loss = (mse_weights * mse_loss_elementwise).sum(dim=-1).mean()
         else:
             mse_loss = mse_loss_elementwise.mean()
 
