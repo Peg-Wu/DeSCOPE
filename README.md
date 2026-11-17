@@ -103,6 +103,7 @@ descope.welcome()
 | [Nadig et al., 2025](https://www.nature.com/articles/s41588-025-02169-3) |     HEPG2 (5.2GB)      | [download](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE264667&format=file&file=GSE264667%5Fhepg2%5Fraw%5Fsinglecell%5F01%2Eh5ad) |
 | [Nadig et al., 2025](https://www.nature.com/articles/s41588-025-02169-3) |     JURKAT (8.7GB)     | [download](https://www.ncbi.nlm.nih.gov/geo/download/?acc=GSE264667&format=file&file=GSE264667%5Fjurkat%5Fraw%5Fsinglecell%5F01%2Eh5ad) |
 | [Norman et al., 2019](https://www.science.org/doi/10.1126/science.aax4438) |      Norman_K562       | [download](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE133344) |
+|                             Ours                             |          PC-9          |       [download](https://zenodo.org/records/21622013)        |
 
 - The H1 dataset was obtained from the [Virtual Cell Challenge 2025](https://virtualcellchallenge.org/). ([download](https://storage.googleapis.com/vcc_data_prod/datasets/state/competition_support_set.zip))
   - NOTE: ESM2 gene embeddings can also be obtained from here.

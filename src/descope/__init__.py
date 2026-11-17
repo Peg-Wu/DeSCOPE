@@ -1,4 +1,4 @@
-__version__ = "0.0.7"
+__version__ = "1.0.0"
 
 from .logging import (
     set_verbosity_info,
